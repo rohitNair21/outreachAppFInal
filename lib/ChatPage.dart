@@ -20,6 +20,46 @@ class _ChatPageState extends State<ChatPage> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final String _collectionName = 'messages';
 
+  String _liveChatLabel = 'Live Chat';
+  String _typeMessageLabel = 'Type a message';
+  String _sendLabel = 'SEND';
+
+  Future<void> _translateLiveChatLabel() async {
+    try {
+      final translatedLabel = await TranslationAPI.translate(
+          _liveChatLabel, widget.selectedLanguage);
+      setState(() {
+        _liveChatLabel = translatedLabel;
+      });
+    } catch (e) {
+      print('Error translating label: $e');
+    }
+  }
+
+  Future<void> _translateMessageLabel() async {
+    try {
+      final translatedLabel = await TranslationAPI.translate(
+          _liveChatLabel, widget.selectedLanguage);
+      setState(() {
+        _liveChatLabel = translatedLabel;
+      });
+    } catch (e) {
+      print('Error translating label: $e');
+    }
+  }
+
+  Future<void> _translateSendLabel() async {
+    try {
+      final translatedLabel = await TranslationAPI.translate(
+          _liveChatLabel, widget.selectedLanguage);
+      setState(() {
+        _liveChatLabel = translatedLabel;
+      });
+    } catch (e) {
+      print('Error translating label: $e');
+    }
+  }
+
   Future<void> _sendMessage() async {
     final originalMessage = _textController.text;
     final translatedMessage = await TranslationAPI.translate(
@@ -43,7 +83,15 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Live Chat')),
+      appBar: AppBar(
+        title: Text(
+          'Live Chat',
+          style: TextStyle(
+            color: Color(0xffffffff),
+          ),
+        ),
+        backgroundColor: Color(0xff323232),
+      ),
       body: Column(
         children: <Widget>[
           Expanded(
@@ -99,23 +147,52 @@ class _ChatPageState extends State<ChatPage> {
               },
             ),
           ),
-          Padding(
-            padding: EdgeInsets.only(bottom: 20.0),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            decoration: BoxDecoration(
+              color: Color(0xFF323232),
+              border: Border(
+                top: BorderSide(
+                  color: Color(0xFFD8D8D8),
+                  width: 1.0,
+                ),
+              ),
+            ),
             child: Row(
               children: <Widget>[
                 Expanded(
                   child: TextField(
                     controller: _textController,
-                    decoration: InputDecoration(hintText: 'Type a message'),
+                    decoration: InputDecoration(
+                      hintText: 'Type a message',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                      filled: true,
+                      fillColor: Color(0xFFfcfcfc),
+                    ),
                   ),
                 ),
-                ElevatedButton(
-                  child: Text('Send'),
+                SizedBox(width: 8.0),
+                MaterialButton(
                   onPressed: _sendMessage,
+                  color: Color(0xFF141414),
+                  textColor: Colors.white,
+                  child: Text('SEND'),
+                  minWidth: 80.0,
+                  height: 40.0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                  ),
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );

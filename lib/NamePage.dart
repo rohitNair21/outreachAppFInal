@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'ChatPage.dart';
+import 'TranslationAPI.dart';
 
 class NamePage extends StatefulWidget {
   const NamePage({Key? key}) : super(key: key);
@@ -68,13 +69,40 @@ class _NamePageState extends State<NamePage> {
     {"name": "Ukrainian", "code": "uk"},
     {"name": "Vietnamese", "code": "vi"}
   ];
+  String _enterChatLabel = 'Enter Chat';
+
+  Future<void> _translateEnterChatLabel() async {
+    try {
+      final translatedLabel =
+          await TranslationAPI.translate(_enterChatLabel, _selectedLanguage!);
+      setState(() {
+        _enterChatLabel = translatedLabel;
+      });
+    } catch (e) {
+      print('Error translating label: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _translateEnterChatLabel();
+  }
+
+  @override
+  void didUpdateWidget(covariant NamePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _translateEnterChatLabel();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Safe Space'),
+        title: Text('SafeSpace'),
+        backgroundColor: Color(0xFF323232),
       ),
+      backgroundColor: Color(0xFFD8D8D8),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
@@ -82,7 +110,15 @@ class _NamePageState extends State<NamePage> {
             padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _textController,
-              decoration: InputDecoration(hintText: 'Enter your name'),
+              decoration: InputDecoration(
+                hintText: 'Enter your name',
+                fillColor: Color(0xFFFCFCFC),
+                filled: true,
+                labelStyle: TextStyle(
+                  fontFamily: 'Haboro',
+                  fontSize: 16,
+                ),
+              ),
             ),
           ),
           DropdownButton<String>(
@@ -91,6 +127,7 @@ class _NamePageState extends State<NamePage> {
               setState(() {
                 _selectedLanguage = newValue;
               });
+              _translateEnterChatLabel();
             },
             items: _languageList.map((Map<String, String> language) {
               return DropdownMenuItem<String>(
@@ -99,19 +136,25 @@ class _NamePageState extends State<NamePage> {
               );
             }).toList(),
           ),
+          SizedBox(height: 16),
           ElevatedButton(
-            child: Text('Enter Chat'),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChatPage(
-                    username: _textController.text,
-                    selectedLanguage: _selectedLanguage!,
-                  ),
-                ),
-              );
-            },
+            child: Text(_enterChatLabel),
+            onPressed: _textController.text.isEmpty
+                ? null
+                : () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatPage(
+                          username: _textController.text,
+                          selectedLanguage: _selectedLanguage!,
+                        ),
+                      ),
+                    );
+                  },
+            style: ElevatedButton.styleFrom(
+              primary: Color(0xFF141414),
+            ),
           ),
         ],
       ),
