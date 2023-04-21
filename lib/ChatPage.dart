@@ -3,6 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 class ChatPage extends StatefulWidget {
+  final String? username;
+
+  const ChatPage({Key? key, this.username}) : super(key: key);
+
   @override
   _ChatPageState createState() => _ChatPageState();
 }
@@ -40,8 +44,8 @@ class _ChatPageState extends State<ChatPage> {
                           Map<String, dynamic> data =
                               document.data() as Map<String, dynamic>;
                           return ListTile(
-                            title: Text(data['username']),
-                            subtitle: Text(data['message']),
+                            title: Text(data['username'] ?? ''),
+                            subtitle: Text(data['message'] ?? ''),
                             trailing: Text(DateFormat('HH:mm')
                                 .format(data['timestamp'].toDate())),
                           );
@@ -64,7 +68,7 @@ class _ChatPageState extends State<ChatPage> {
                 child: Text('Send'),
                 onPressed: () {
                   _db.collection(_collectionName).add({
-                    'username': 'User',
+                    'username': widget.username,
                     'message': _textController.text,
                     'timestamp': DateTime.now(),
                   });
