@@ -1,7 +1,11 @@
+import 'dart:html';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'TranslationAPI.dart';
+import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 
 class ChatPage extends StatefulWidget {
   final String? username;
@@ -39,9 +43,9 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _translateMessageLabel() async {
     try {
       final translatedLabel = await TranslationAPI.translate(
-          _liveChatLabel, widget.selectedLanguage);
+          _typeMessageLabel, widget.selectedLanguage);
       setState(() {
-        _liveChatLabel = translatedLabel;
+        _typeMessageLabel = translatedLabel;
       });
     } catch (e) {
       print('Error translating label: $e');
@@ -50,10 +54,10 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _translateSendLabel() async {
     try {
-      final translatedLabel = await TranslationAPI.translate(
-          _liveChatLabel, widget.selectedLanguage);
+      final translatedLabel =
+          await TranslationAPI.translate(_sendLabel, widget.selectedLanguage);
       setState(() {
-        _liveChatLabel = translatedLabel;
+        _sendLabel = translatedLabel;
       });
     } catch (e) {
       print('Error translating label: $e');
@@ -81,11 +85,27 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _translateMessageLabel();
+    _translateLiveChatLabel();
+    _translateSendLabel();
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _translateMessageLabel();
+    _translateLiveChatLabel();
+    _translateSendLabel();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Live Chat',
+          _liveChatLabel,
           style: TextStyle(
             color: Color(0xffffffff),
           ),
@@ -164,7 +184,7 @@ class _ChatPageState extends State<ChatPage> {
                   child: TextField(
                     controller: _textController,
                     decoration: InputDecoration(
-                      hintText: 'Type a message',
+                      hintText: _typeMessageLabel,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30.0),
                         borderSide: BorderSide.none,
@@ -183,7 +203,7 @@ class _ChatPageState extends State<ChatPage> {
                   onPressed: _sendMessage,
                   color: Color(0xFF141414),
                   textColor: Colors.white,
-                  child: Text('SEND'),
+                  child: Text(_sendLabel),
                   minWidth: 80.0,
                   height: 40.0,
                   shape: RoundedRectangleBorder(

@@ -18,6 +18,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'SafeSpace',
       home: SplashScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
