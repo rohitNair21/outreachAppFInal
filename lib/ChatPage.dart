@@ -1,11 +1,11 @@
-import 'dart:html';
-
+//import 'dart:html';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'TranslationAPI.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'package:grouped_list/grouped_list.dart';
 
 class ChatPage extends StatefulWidget {
   final String? username;
@@ -112,108 +112,162 @@ class _ChatPageState extends State<ChatPage> {
         ),
         backgroundColor: Color(0xff323232),
       ),
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _db
-                  .collection(_collectionName)
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
-              builder: (BuildContext context,
-                  AsyncSnapshot<QuerySnapshot> snapshot) {
-                if (snapshot.hasError) return Text('Error: ${snapshot.error}');
-                switch (snapshot.connectionState) {
-                  case ConnectionState.waiting:
-                    return CircularProgressIndicator();
-                  default:
-                    return Scrollbar(
-                      child: ListView(
-                        reverse: true,
-                        shrinkWrap: true,
-                        children: snapshot.data!.docs
-                            .map((DocumentSnapshot document) {
-                          Map<String, dynamic> data =
-                              document.data() as Map<String, dynamic>;
-                          final isOutgoingMessage =
-                              data['username'] == widget.username;
-                          final message = data['translated_message'] ??
-                              data['message'] ??
-                              '';
-                          final subtitle = isOutgoingMessage
-                              ? data['message']
-                              : data['translated_message'] ?? '';
-                          return ListTile(
-                            title: Text(data['username'] ?? ''),
-                            subtitle: FutureBuilder(
-                              future: _translateMessage(
-                                  subtitle, widget.selectedLanguage),
-                              builder: (BuildContext context,
-                                  AsyncSnapshot<String> snapshot) {
-                                if (snapshot.hasData) {
-                                  return Text(snapshot.data!);
-                                } else {
-                                  return Text('');
-                                }
-                              },
-                            ),
-                            trailing: Text(DateFormat('HH:mm')
-                                .format(data['timestamp'].toDate())),
-                          );
-                        }).toList(),
-                      ),
-                    );
-                }
-              },
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            decoration: BoxDecoration(
-              color: Color(0xFF323232),
-              border: Border(
-                top: BorderSide(
-                  color: Color(0xFFD8D8D8),
-                  width: 1.0,
-                ),
-              ),
-            ),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: TextField(
-                    controller: _textController,
-                    decoration: InputDecoration(
-                      hintText: _typeMessageLabel,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 8.0,
-                      ),
-                      filled: true,
-                      fillColor: Color(0xFFfcfcfc),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _db
+            .collection(_collectionName)
+            .orderBy('timestamp', descending: true)
+            .snapshots(),
+        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.hasError) return Text('Error: ${snapshot.error}');
+          switch (snapshot.connectionState) {
+            case ConnectionState.waiting:
+              return CircularProgressIndicator();
+            default:
+              final data = snapshot.data!.docs
+                  .map((DocumentSnapshot document) =>
+                      document.data() as Map<String, dynamic>)
+                  .toList();
+              return GroupedListView<dynamic, String>(
+                elements: data,
+                groupBy: (element) => DateFormat.yMMMMd()
+                    .format((element['timestamp'] as Timestamp).toDate()),
+                groupComparator: (value1, value2) => (value2.compareTo(value1)),
+                itemComparator: (item1, item2) =>
+                    (item2['timestamp'] as Timestamp)
+                        .compareTo(item1['timestamp'] as Timestamp),
+                order: GroupedListOrder.DESC,
+                useStickyGroupSeparators: true,
+                groupSeparatorBuilder: (String value) => Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    value,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
                 ),
-                SizedBox(width: 8.0),
-                MaterialButton(
-                  onPressed: _sendMessage,
-                  color: Color(0xFF141414),
-                  textColor: Colors.white,
-                  child: Text(_sendLabel),
-                  minWidth: 80.0,
-                  height: 40.0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
-                ),
-              ],
+                itemBuilder: (context, dynamic element) {
+                  final isOutgoingMessage =
+                      element['username'] == widget.username;
+                  final message =
+                      element['translated_message'] ?? element['message'] ?? '';
+                  final subtitle = isOutgoingMessage
+                      ? element['message']
+                      : element['translated_message'] ?? '';
+
+                  return Padding(
+                      padding: EdgeInsets.symmetric(vertical: 3.0),
+                      child: UnconstrainedBox(
+                          child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                  // maxWidth: MediaQuery.of(context).size.width,
+                                  ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    color: isOutgoingMessage
+                                        ? Colors.red
+                                        : Colors.green,
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(15),
+                                      topRight: Radius.circular(15),
+                                      bottomLeft: !isOutgoingMessage
+                                          ? Radius.circular(0)
+                                          : Radius.circular(15),
+                                      bottomRight: isOutgoingMessage
+                                          ? Radius.circular(0)
+                                          : Radius.circular(15),
+                                    )),
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 5.0, horizontal: 10.0),
+                                constraints: BoxConstraints(
+                                    maxWidth:
+                                        MediaQuery.of(context).size.width *
+                                            0.75),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      element['username'],
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      message,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      DateFormat('HH:mm').format(
+                                          (element['timestamp'] as Timestamp)
+                                              .toDate()),
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ))));
+                },
+              );
+          }
+        },
+      ),
+      bottomNavigationBar: BottomAppBar(
+        color: Color(0xFF141414),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          decoration: BoxDecoration(
+            color: Color(0xFF323232),
+            border: Border(
+              top: BorderSide(
+                color: Color(0xFFD8D8D8),
+                width: 1.0,
+              ),
             ),
           ),
-        ],
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  decoration: InputDecoration(
+                    hintText: _typeMessageLabel,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    filled: true,
+                    fillColor: Color(0xFFfcfcfc),
+                  ),
+                ),
+              ),
+              SizedBox(width: 8.0),
+              MaterialButton(
+                onPressed: _sendMessage,
+                color: Color(0xFF141414),
+                textColor: Colors.white,
+                child: Text(_sendLabel),
+                minWidth: 80.0,
+                height: 40.0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

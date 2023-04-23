@@ -200,6 +200,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  grouped_list:
+    dependency: "direct main"
+    description:
+      name: grouped_list
+      sha256: "1b5bce73ae7bfed03302c90dd485dced53b0d2b52213fe2a392a041dafaff4af"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.2.0"
   html:
     dependency: transitive
     description:
