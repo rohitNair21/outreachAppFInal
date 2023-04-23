@@ -128,6 +128,7 @@ class _ChatPageState extends State<ChatPage> {
                       document.data() as Map<String, dynamic>)
                   .toList();
               return GroupedListView<dynamic, String>(
+                order: GroupedListOrder.DESC,
                 elements: data,
                 groupBy: (element) => DateFormat.yMMMMd()
                     .format((element['timestamp'] as Timestamp).toDate()),
@@ -135,7 +136,6 @@ class _ChatPageState extends State<ChatPage> {
                 itemComparator: (item1, item2) =>
                     (item2['timestamp'] as Timestamp)
                         .compareTo(item1['timestamp'] as Timestamp),
-                order: GroupedListOrder.DESC,
                 useStickyGroupSeparators: true,
                 groupSeparatorBuilder: (String value) => Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -158,63 +158,67 @@ class _ChatPageState extends State<ChatPage> {
                       : element['translated_message'] ?? '';
 
                   return Padding(
-                      padding: EdgeInsets.symmetric(vertical: 3.0),
-                      child: UnconstrainedBox(
-                          child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                  // maxWidth: MediaQuery.of(context).size.width,
-                                  ),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    color: isOutgoingMessage
-                                        ? Colors.red
-                                        : Colors.green,
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(15),
-                                      topRight: Radius.circular(15),
-                                      bottomLeft: !isOutgoingMessage
-                                          ? Radius.circular(0)
-                                          : Radius.circular(15),
-                                      bottomRight: isOutgoingMessage
-                                          ? Radius.circular(0)
-                                          : Radius.circular(15),
-                                    )),
-                                padding: EdgeInsets.symmetric(
-                                    vertical: 5.0, horizontal: 10.0),
-                                constraints: BoxConstraints(
-                                    maxWidth:
-                                        MediaQuery.of(context).size.width *
-                                            0.75),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      element['username'],
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      message,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      DateFormat('HH:mm').format(
-                                          (element['timestamp'] as Timestamp)
-                                              .toDate()),
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
+                    padding:
+                        EdgeInsets.symmetric(vertical: 3.0, horizontal: 3.0),
+                    child: Row(
+                      mainAxisAlignment: isOutgoingMessage
+                          ? MainAxisAlignment.end
+                          : MainAxisAlignment.start,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                              color:
+                                  isOutgoingMessage ? Colors.red : Colors.green,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(15),
+                                topRight: Radius.circular(15),
+                                bottomLeft: !isOutgoingMessage
+                                    ? Radius.circular(0)
+                                    : Radius.circular(15),
+                                bottomRight: isOutgoingMessage
+                                    ? Radius.circular(0)
+                                    : Radius.circular(15),
+                              )),
+                          padding: EdgeInsets.symmetric(
+                              vertical: 5.0, horizontal: 10.0),
+                          constraints: BoxConstraints(
+                              maxWidth:
+                                  MediaQuery.of(context).size.width * 0.75),
+                          child: Column(
+                            crossAxisAlignment: isOutgoingMessage
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                element['username'],
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
-                              ))));
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                message,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                DateFormat('HH:mm').format(
+                                    (element['timestamp'] as Timestamp)
+                                        .toDate()),
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
                 },
               );
           }
