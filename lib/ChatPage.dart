@@ -23,6 +23,9 @@ class _ChatPageState extends State<ChatPage> {
   final TextEditingController _textController = TextEditingController();
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final String _collectionName = 'messages';
+  ScrollController _scrollController = ScrollController();
+  bool _firstAutoscrollExecuted = false;
+  bool _shouldAutoscroll = false;
 
   String _liveChatLabel = 'Live Chat';
   String _typeMessageLabel = 'Type a message';
@@ -37,6 +40,26 @@ class _ChatPageState extends State<ChatPage> {
       });
     } catch (e) {
       print('Error translating label: $e');
+    }
+  }
+
+  void _scrollToBottom() {
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: Duration(milliseconds: 500),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _scrollListener() {
+    _firstAutoscrollExecuted = true;
+
+    if (_scrollController.hasClients &&
+        _scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent) {
+      _shouldAutoscroll = true;
+    } else {
+      _shouldAutoscroll = false;
     }
   }
 
@@ -75,6 +98,11 @@ class _ChatPageState extends State<ChatPage> {
       'timestamp': DateTime.now(),
     });
     _textController.clear();
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: Duration(milliseconds: 500),
+      curve: Curves.easeOut,
+    );
   }
 
   Future<String> _translateMessage(
@@ -90,6 +118,7 @@ class _ChatPageState extends State<ChatPage> {
     _translateMessageLabel();
     _translateLiveChatLabel();
     _translateSendLabel();
+    _scrollController.addListener(_scrollListener);
   }
 
   @override
@@ -127,7 +156,11 @@ class _ChatPageState extends State<ChatPage> {
                   .map((DocumentSnapshot document) =>
                       document.data() as Map<String, dynamic>)
                   .toList();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _scrollToBottom();
+              });
               return GroupedListView<dynamic, String>(
+                controller: _scrollController,
                 order: GroupedListOrder.DESC,
                 elements: data,
                 groupBy: (element) => DateFormat.yMMMMd()
@@ -151,12 +184,8 @@ class _ChatPageState extends State<ChatPage> {
                 itemBuilder: (context, dynamic element) {
                   final isOutgoingMessage =
                       element['username'] == widget.username;
-                  final message =
-                      element['translated_message'] ?? element['message'] ?? '';
-                  final subtitle = isOutgoingMessage
-                      ? element['message']
-                      : element['translated_message'] ?? '';
-
+                  final messageFuture =
+                      element['translated_message'] ?? element['message'];
                   return Padding(
                     padding:
                         EdgeInsets.symmetric(vertical: 3.0, horizontal: 3.0),
@@ -167,8 +196,9 @@ class _ChatPageState extends State<ChatPage> {
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                              color:
-                                  isOutgoingMessage ? Colors.red : Colors.green,
+                              color: isOutgoingMessage
+                                  ? Colors.grey
+                                  : Colors.green,
                               borderRadius: BorderRadius.only(
                                 topLeft: Radius.circular(15),
                                 topRight: Radius.circular(15),
@@ -197,11 +227,21 @@ class _ChatPageState extends State<ChatPage> {
                                 ),
                               ),
                               SizedBox(height: 4),
-                              Text(
-                                message,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                ),
+                              FutureBuilder<String>(
+                                future: _translateMessage(
+                                    messageFuture, widget.selectedLanguage),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasData) {
+                                    return Text(
+                                      snapshot.data!,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    );
+                                  } else {
+                                    return CircularProgressIndicator();
+                                  }
+                                },
                               ),
                               SizedBox(height: 4),
                               Text(
